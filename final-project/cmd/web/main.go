@@ -2,11 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"final-project/data"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/alexedwards/scs/redisstore"
@@ -42,14 +45,19 @@ func main() {
 		InfoLog:  infoLog,
 		ErrorLog: errorLog,
 		Wait:     &wg,
+		Models:   data.New(db),
 	}
 
 	// set up mail
+
+	// listen for signals
+	go app.listenForShutdown()
 
 	// listen for web connections
 	app.serve()
 }
 
+// serve is used to start the web server
 func (app *Config) serve() {
 	// start http server
 	srv := &http.Server{
@@ -64,6 +72,7 @@ func (app *Config) serve() {
 	}
 }
 
+// initDB sets up connection with database
 func initDB() *sql.DB {
 	conn := connectToDB()
 	if conn == nil {
@@ -72,6 +81,8 @@ func initDB() *sql.DB {
 	return conn
 }
 
+// connectToDB is used to "try to" connect to database
+// if connection is failed, it will try 10 times before exit
 func connectToDB() *sql.DB {
 	counts := 0
 
@@ -101,6 +112,7 @@ func connectToDB() *sql.DB {
 	}
 }
 
+// openDB is used to connect to database
 func openDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
@@ -114,6 +126,7 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+// initSession sets up a session, using Redis for session store
 func initSession() *scs.SessionManager {
 	// set up session
 	session := scs.New()
@@ -126,6 +139,7 @@ func initSession() *scs.SessionManager {
 	return session
 }
 
+// initRedis returns a pool of connections to Redis
 func initRedis() *redis.Pool {
 	redisPool := &redis.Pool{
 		MaxIdle: 10,
@@ -140,4 +154,26 @@ func initRedis() *redis.Pool {
 		},
 	}
 	return redisPool
+}
+
+// listenForShutdown is a goroutine which concurrency running with serve()
+// it's waiting for signals to stop the application
+func (app *Config) listenForShutdown() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	app.shutdown()
+	os.Exit(0)
+}
+
+// shutdown will check, close and wait for other sections to shutdown
+// before shutdown the application
+func (app *Config) shutdown() {
+	// perform any cleanup tasks
+	app.InfoLog.Println("Would run cleanup tasks...")
+
+	// block until WaitGroup is empty
+	app.Wait.Wait()
+
+	app.InfoLog.Println("Closing channels and shutting down application...")
 }

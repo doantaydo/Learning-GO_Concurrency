@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// routes returns a handler for the web server
 func (app *Config) routes() http.Handler {
 	// create router
 	mux := chi.NewRouter()

@@ -9,6 +9,7 @@ import (
 
 var pathToTemplates = "./cmd/web/templates"
 
+// TemplateData includes data which will be added when rendering a web page
 type TemplateData struct {
 	StringMap     map[string]string
 	IntMap        map[string]int
@@ -22,6 +23,7 @@ type TemplateData struct {
 	//User          *data.User
 }
 
+// render is used to render a web page based on name of web page and data of it
 func (app *Config) render(w http.ResponseWriter, r *http.Request, t string, td *TemplateData) {
 	partials := []string{
 		fmt.Sprintf("%s/base.layout.gohtml", pathToTemplates),
@@ -56,6 +58,7 @@ func (app *Config) render(w http.ResponseWriter, r *http.Request, t string, td *
 	}
 }
 
+// AddDefaultData to initiate default data for a web page
 func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateData {
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 	td.Warning = app.Session.PopString(r.Context(), "warning")
@@ -70,6 +73,7 @@ func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateDa
 	return td
 }
 
+// IsAuthenticate return TRUE if the user authenticated before in this session
 func (app *Config) IsAuthenticate(r *http.Request) bool {
 	return app.Session.Exists(r.Context(), "userID")
 }
