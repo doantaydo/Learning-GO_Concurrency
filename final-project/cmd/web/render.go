@@ -1,6 +1,7 @@
 package main
 
 import (
+	"final-project/data"
 	"fmt"
 	"net/http"
 	"text/template"
@@ -20,7 +21,7 @@ type TemplateData struct {
 	Error         string
 	Authenticated bool
 	Now           time.Time
-	//User          *data.User
+	User          *data.User
 }
 
 // render is used to render a web page based on name of web page and data of it
@@ -66,7 +67,12 @@ func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateDa
 
 	if app.IsAuthenticate(r) {
 		td.Authenticated = true
-		// TODO - get more user information
+		user, ok := app.Session.Get(r.Context(), "user").(data.User)
+		if !ok {
+			app.ErrorLog.Println("Can't get user from session")
+		} else {
+			td.User = &user
+		}
 	}
 	td.Now = time.Now()
 
