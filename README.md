@@ -1,6 +1,8 @@
 # GO Learning - Concurrency
 
-<strong>Status:</strong> Learning ... <br />
+<strong>Status:</strong> Completed <br />
+
+<strong>What I can do next:</strong> Update testcases for other methods<br />
 
 This is the  repository for my learning course in Udemy.
 - <strong>Course:</strong> [Working with Concurrency in Go (Golang)](https://gameloft.udemy.com/course/working-with-concurrency-in-go-golang)
